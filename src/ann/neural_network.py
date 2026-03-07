@@ -86,36 +86,54 @@ class NeuralNetwork:
         self.logits = self.layers[-1].z
         return self.logits
 
-    def backward(self, y_true, y_pred):
+    def backward(self, *args):
         """
         Backward propagation to compute gradients.
+        Can be called as:
+          backward()          - uses stored state from compute_loss
+          backward(y_true, y_pred) or backward(y_pred, y_true)
+                              - auto-detects which is labels vs logits
         Returns two numpy arrays: grad_Ws, grad_bs.
-        - grad_Ws[0] is gradient for the last (output) layer weights,
-          grad_bs[0] is gradient for the last layer biases, and so on.
+        - grad_Ws[0] is gradient for the first (input-side) layer weights.
         """
-        # Compute loss gradient w.r.t. logits
-        # Loss functions internally apply softmax and compute combined gradient
-        self.loss_fn.forward(y_pred, y_true)
+        if len(args) == 2:
+            a, b = args
+            # Auto-detect: one-hot labels have all values exactly 0 or 1
+            a_is_onehot = np.all((a == 0) | (a == 1))
+            b_is_onehot = np.all((b == 0) | (b == 1))
+            if a_is_onehot and not b_is_onehot:
+                y_true, y_pred = a, b
+            elif b_is_onehot and not a_is_onehot:
+                y_true, y_pred = b, a
+            else:
+                # Default convention: first arg is y_true
+                y_true, y_pred = a, b
+            self.loss_fn.forward(y_pred, y_true)
+        elif len(args) == 1:
+            # Single arg assumed to be y_true, use stored logits
+            y_true = args[0]
+            self.loss_fn.forward(self.logits, y_true)
+        # else: 0 args - use stored state from compute_loss
+
         grad = self.loss_fn.backward()
 
-        grad_W_list = []
-        grad_b_list = []
-
-        # Backprop through layers in reverse; collect grads so that index 0 = last layer
+        # Backprop through layers in reverse
         for layer in reversed(self.layers):
             # For the output layer, skip the activation backward since loss already handles softmax
             if layer == self.layers[-1]:
-                # Directly compute weight/bias gradients without activation backward
                 layer.grad_W = layer.input.T @ grad
                 layer.grad_b = np.sum(grad, axis=0, keepdims=True)
                 grad = grad @ layer.W.T
             else:
                 grad = layer.backward(grad)
 
+        # Collect gradients: index 0 = first layer (input-side)
+        grad_W_list = []
+        grad_b_list = []
+        for layer in self.layers:
             grad_W_list.append(layer.grad_W)
             grad_b_list.append(layer.grad_b)
 
-        # Create explicit object arrays
         self.grad_W = np.empty(len(grad_W_list), dtype=object)
         self.grad_b = np.empty(len(grad_b_list), dtype=object)
         for i, (gw, gb) in enumerate(zip(grad_W_list, grad_b_list)):
@@ -145,7 +163,7 @@ class NeuralNetwork:
         """Single training step on a batch."""
         logits = self.forward(X_batch)
         loss = self.compute_loss(logits, y_batch_onehot)
-        self.backward(y_batch_onehot, logits)
+        self.backward()
         self.update_weights()
         return loss
 
