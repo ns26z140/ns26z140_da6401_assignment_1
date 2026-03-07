@@ -4,8 +4,7 @@
 
 A configurable, modular Multi-Layer Perceptron (MLP) built from scratch using only **NumPy** for mathematical operations. Implements the complete training pipeline — forward propagation, backpropagation, various optimizers, activation functions, and loss functions — to classify MNIST and Fashion-MNIST datasets.
 
-- **GitHub Repository**: `<YOUR_GITHUB_LINK>`
-
+- **GitHub Repository**: https://github.com/ns26z140/ns26z140_da6401_assignment_1
 - **W&B Report**: https://wandb.ai/ns26z140-iitm-india/ns26z140-da6401-assignment/reports/NS26Z140-ASSIGNEMENT-1---VmlldzoxNjEyODkyMw?accessToken=vj39lsx5irq5miwv092yjq2bh4n6mmf60y5azhbs7397dv4oc05skbkzuh0sq3mf
 
 ## Project Structure
