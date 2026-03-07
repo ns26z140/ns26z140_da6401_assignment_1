@@ -57,8 +57,8 @@ class NeuralNetwork:
             self.layers.append(layer)
             prev_size = h_size
 
-        # Output layer (no activation - returns logits)
-        output_layer = NeuralLayer(prev_size, output_size, activation="softmax", weight_init=weight_init)
+        # Output layer (same activation as hidden layers; loss handles softmax internally)
+        output_layer = NeuralLayer(prev_size, output_size, activation=activation, weight_init=weight_init)
         self.layers.append(output_layer)
 
         # Loss function
@@ -117,15 +117,9 @@ class NeuralNetwork:
 
         grad = self.loss_fn.backward()
 
-        # Backprop through layers in reverse
+        # Backprop through all layers uniformly
         for layer in reversed(self.layers):
-            # For the output layer, skip the activation backward since loss already handles softmax
-            if layer == self.layers[-1]:
-                layer.grad_W = layer.input.T @ grad
-                layer.grad_b = np.sum(grad, axis=0, keepdims=True)
-                grad = grad @ layer.W.T
-            else:
-                grad = layer.backward(grad)
+            grad = layer.backward(grad)
 
         # Collect gradients: index 0 = first layer (input-side)
         grad_W_list = []
