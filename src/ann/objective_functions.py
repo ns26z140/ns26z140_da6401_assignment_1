@@ -32,7 +32,7 @@ class CrossEntropyLoss:
         Gradient of cross-entropy + softmax w.r.t. logits.
         dL/dz = (y_pred - y_true) / batch_size
         """
-        return (self.y_pred - self.y_true) / self.y_true.shape[0]
+        return (self.y_pred - self.y_true)
 
 
 class MeanSquaredErrorLoss:
@@ -73,7 +73,7 @@ class MeanSquaredErrorLoss:
             jacobian = np.diagflat(y) - y @ y.T  # (C, C)
             grad[n] = (2.0 * diff[n]) @ jacobian
 
-        return grad / batch_size
+        return grad
 
 
 def get_loss(name):
